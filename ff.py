@@ -17,13 +17,24 @@ import sys
 import itertools
 import csv
 
-def get_form_titles(d):
+def get_form_titles_old(d):
     x = d.find_elements_by_xpath('//*[@role="heading"]')
     out = []
     for xx in x:
         cls = set(xx.get_attribute('class').split(' '))
 
         if 'freebirdFormviewerComponentsQuestionBaseTitle' in cls:
+            out.append((xx, xx.text))
+
+    return out
+
+def get_form_titles(d):
+    x = d.find_elements_by_xpath('//*[@role="heading"]')
+    out = []
+    for xx in x:
+        cls = set(xx.get_attribute('class').split(' '))
+
+        if xx.get_attribute('aria-level') == '3':
             out.append((xx, xx.text))
 
     return out
@@ -67,7 +78,7 @@ class RadioButtonFields(FormField):
     @staticmethod
     def find(form, fld_ids):
         out = []
-        for rb in form.find_elements_by_xpath('//div[contains(concat(" ",normalize-space(@class)," ")," freebirdFormviewerViewItemsRadiogroupRadioGroup ")]'):
+        for rb in form.find_elements_by_xpath('//div[@role="radiogroup"]'):
             rbid = rb.get_attribute('aria-labelledby')
             if rbid in fld_ids:
                 ti = rb.find_element_by_xpath('.//input[@type="text"]')
