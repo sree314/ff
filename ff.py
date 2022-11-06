@@ -139,14 +139,35 @@ def read_formdata(formdata):
     print(out)
     return out
 
+def read_formdata_ods(formdata, sheetname):
+    from pandas_ods_reader import read_ods
+    df = read_ods(formdata, sheetname)
+    d = df.to_dict('records')
+
+    out = []
+    for r in d:
+        out.append(dict([(k, str(v) if not isinstance(v, float) else str(int(v))) for k, v in r.items()]))
+
+    print(out)
+    return out
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Fill a Google Form")
     p.add_argument("formspec", help="Form configuration")
     p.add_argument("formdata", help="Form data as CSV")
+    p.add_argument("-s", dest="sheetname", help="Sheet to use")
 
     args = p.parse_args()
     cfg = read_formspec(args.formspec)
-    formdata = read_formdata(args.formdata)
+    if args.formdata.endswith('.ods'):
+        if args.sheetname is None:
+            print("ERROR: Need -s when formdata is an ODS")
+            p.print_help()
+            sys.exit(1)
+
+        formdata = read_formdata_ods(args.formdata, args.sheetname)
+    else:
+        formdata = read_formdata(args.formdata)
 
     url = cfg.get('form', 'url')
 
