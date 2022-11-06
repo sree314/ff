@@ -30,12 +30,15 @@ def get_form_titles_old(d):
 
 def get_form_titles(d):
     x = d.find_elements_by_xpath('//*[@role="heading"]')
+
     out = []
     for xx in x:
-        cls = set(xx.get_attribute('class').split(' '))
-
         if xx.get_attribute('aria-level') == '3':
-            out.append((xx, xx.text))
+            # for some strange reason, .text now contains \n between
+            # field title and *
+
+            txt = xx.text.replace('\n', ' ')
+            out.append((xx, txt))
 
     return out
 
