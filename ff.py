@@ -21,7 +21,7 @@ import csv
 import time
 
 def get_form_titles_old(d):
-    x = d.find_elements_by_xpath('//*[@role="heading"]')
+    x = d.find_elements("xpath", '//*[@role="heading"]')
     out = []
     for xx in x:
         cls = set(xx.get_attribute('class').split(' '))
@@ -33,18 +33,20 @@ def get_form_titles_old(d):
 
 class MSForm:
     def get_form_titles(self, d):
-        x = d.find_elements_by_xpath('//div[@class="-a-54"]')
+        x = d.find_elements("xpath", '//div[@class="-a-142"]')
 
         out = []
-        for xx in x:
-            y = xx.find_element(By.CSS_SELECTOR, 'span.text-format-content')
+        for div_with_id in x:
+            # will look at id attr of div_with_id to match with input field
+            y = div_with_id.find_element(By.CSS_SELECTOR, 'span.text-format-content')
+            
             if y:
                 txt = y.text.replace('\n', ' ')
                 if txt.strip() == '':
                     print("WARNING: missing title, ignoring form field")
                     continue
 
-                out.append((xx, txt))
+                out.append((div_with_id, txt))
 
         return out
 
@@ -80,6 +82,7 @@ class MSForm:
 
     def set_form_data(self, fields, formdata):
         for f in fields:
+            print("Setting ", f.csvfield)
             if isinstance(f, TextField):
                 f.element.send_keys(formdata[f.csvfield])
             elif isinstance(f, RadioButtonFields):
@@ -93,7 +96,7 @@ class MSForm:
 
 
 def get_form_titles(d):
-    x = d.find_elements_by_xpath('//*[@role="heading"]')
+    x = d.find_elements("xpath", '//*[@role="heading"]')
 
     out = []
     for xx in x:
@@ -133,8 +136,8 @@ class TextField(FormField):
     @staticmethod
     def find(form, fld_ids): # works for MS forms as well
         out = []
-        for ti in itertools.chain(form.find_elements_by_xpath('//input[@type="text"]'),
-                                  form.find_elements_by_xpath('//input[@data-automation-id="textInput"]'), form.find_elements_by_xpath('//textarea')):
+        for ti in itertools.chain(form.find_elements("xpath", '//input[@type="text"]'),
+                                  form.find_elements("xpath", '//input[@data-automation-id="textInput"]'), form.find_elements("xpath", '//textarea')):
             tid = ti.get_attribute('aria-labelledby')
             tid = set(tid.split())
             if len(tid) == 1:
@@ -150,6 +153,8 @@ class TextField(FormField):
 
             if tid in fld_ids:
                 out.append(TextField(fld_ids[tid], ti))
+            else:
+                print("Don't know what to do with", tid)
 
         return out
 
@@ -157,7 +162,7 @@ class RadioButtonFields(FormField):
     @staticmethod
     def find(form, fld_ids):
         out = []
-        for rb in form.find_elements_by_xpath('//div[@role="radiogroup"]'):
+        for rb in form.find_elements("xpath", '//div[@role="radiogroup"]'):
             rbid = rb.get_attribute('aria-labelledby')
 
             # ms form stuff
@@ -175,7 +180,7 @@ class RadioButtonFields(FormField):
 
             if rbid in fld_ids:
                 try:
-                    ti = rb.find_element_by_xpath('.//input[@type="text"]')
+                    ti = rb.find_element("xpath", './/input[@type="text"]')
                 except selenium.common.exceptions.NoSuchElementException:
                     ti = None
 
@@ -185,7 +190,7 @@ class RadioButtonFields(FormField):
                     if al == 'Other response':
                         out.append(TextField(fld_ids[rbid], ti)) # Note: TextField!
                 else:
-                    ti = rb.find_elements_by_xpath('.//input[@type="radio"]')
+                    ti = rb.find_elements("xpath", './/input[@type="radio"]')
                     rbuttons = []
                     for tii in ti:
                         val = tii.get_attribute('value')
@@ -288,6 +293,6 @@ if __name__ == "__main__":
         x = input()
         if x == 'q': break
 
-    #b = d.find_element_by_xpath("//aside[@id='sidebar-second']")
+    #b = d.find_element("xpath", "//aside[@id='sidebar-second']")
 
     d.quit()
